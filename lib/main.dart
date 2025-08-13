@@ -1,21 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationDocumentsDirectory();
   Hive.init(dir.path);
   await Hive.openBox('tasks');
-  runApp(MyPlannerApp());
+  runApp(MyApp());
 }
 
-class MyPlannerApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'To-Do & Planning',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'App Todo Plus',
+      theme: ThemeData(
+        useMaterial3: true,
+        textTheme: GoogleFonts.poppinsTextTheme(),
+        colorSchemeSeed: Colors.blueAccent,
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        textTheme: GoogleFonts.poppinsTextTheme(),
+        colorSchemeSeed: Colors.blueAccent,
+        brightness: Brightness.dark,
+      ),
+      themeMode: ThemeMode.system,
       home: HomePage(),
     );
   }
@@ -28,119 +45,162 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final taskBox = Hive.box('tasks');
-  int _selectedIndex = 0;
 
-  void _addTask(String task) {
-    taskBox.add({'title': task, 'done': false, 'date': DateTime.now().toString()});
-    setState(() {});
+  void _addTask(Map<String, dynamic> task) {
+    taskBox.add(task);
   }
 
-  void _toggleTask(int index) {
-    final task = taskBox.getAt(index);
-    taskBox.putAt(index, {
-      'title': task['title'],
-      'done': !task['done'],
-      'date': task['date']
-    });
-    setState(() {});
-  }
-
-  void _deleteTask(int index) {
-    taskBox.deleteAt(index);
-    setState(() {});
+  void _showTaskForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TaskForm(onSave: _addTask)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      _buildTodoList(),
-      _buildPlanningView(),
-    ];
-
     return Scaffold(
-      appBar: AppBar(title: Text('To-Do & Planning')),
-      body: pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.check_box), label: 'To-Do'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Planning'),
-        ],
-      ),
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton(
-              child: Icon(Icons.add),
-              onPressed: () => _showAddTaskDialog(),
-            )
-          : null,
-    );
-  }
-
-  Widget _buildTodoList() {
-    return ListView.builder(
-      itemCount: taskBox.length,
-      itemBuilder: (context, index) {
-        final task = taskBox.getAt(index);
-        return ListTile(
-          leading: Checkbox(
-            value: task['done'],
-            onChanged: (_) => _toggleTask(index),
-          ),
-          title: Text(
-            task['title'],
-            style: TextStyle(
-              decoration: task['done'] ? TextDecoration.lineThrough : null,
-            ),
-          ),
-          trailing: IconButton(
-            icon: Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _deleteTask(index),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPlanningView() {
-    return ListView.builder(
-      itemCount: taskBox.length,
-      itemBuilder: (context, index) {
-        final task = taskBox.getAt(index);
-        final date = DateTime.parse(task['date']);
-        return ListTile(
-          title: Text(task['title']),
-          subtitle: Text('${date.day}/${date.month}/${date.year}'),
-        );
-      },
-    );
-  }
-
-  void _showAddTaskDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Nouvelle tâche'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(hintText: 'Titre de la tâche'),
-        ),
-        actions: [
-          TextButton(
-            child: Text('Annuler'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text('Ajouter'),
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                _addTask(controller.text);
-              }
-              Navigator.pop(context);
+      appBar: AppBar(title: Text("Mes tâches")),
+      body: ValueListenableBuilder(
+        valueListenable: taskBox.listenable(),
+        builder: (context, Box box, _) {
+          if (box.isEmpty) {
+            return Center(child: Text("Aucune tâche"));
+          }
+          return ListView.builder(
+            itemCount: box.length,
+            itemBuilder: (context, index) {
+              final task = box.getAt(index);
+              return Card(
+                margin: EdgeInsets.all(8),
+                child: ListTile(
+                  leading: task['iconPath'] != null
+                      ? CircleAvatar(backgroundImage: FileImage(File(task['iconPath'])))
+                      : Text(task['emoji'] ?? "📝", style: TextStyle(fontSize: 24)),
+                  title: Text(task['title'], style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text("${task['description'] ?? ''}\n${task['startTime']} - ${task['endTime']}"),
+                  isThreeLine: true,
+                ),
+              );
             },
-          ),
-        ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showTaskForm,
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class TaskForm extends StatefulWidget {
+  final Function(Map<String, dynamic>) onSave;
+
+  TaskForm({required this.onSave});
+
+  @override
+  _TaskFormState createState() => _TaskFormState();
+}
+
+class _TaskFormState extends State<TaskForm> {
+  final _titleController = TextEditingController();
+  final _descController = TextEditingController();
+  String? _startTime;
+  String? _endTime;
+  String? _emoji;
+  String? _iconPath;
+
+  Future<void> _pickTime(bool isStart) async {
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (time != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = time.format(context);
+        } else {
+          _endTime = time.format(context);
+        }
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _iconPath = picked.path;
+        _emoji = null;
+      });
+    }
+  }
+
+  void _pickEmoji() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => EmojiPicker(
+        onEmojiSelected: (category, emoji) {
+          setState(() {
+            _emoji = emoji.emoji;
+            _iconPath = null;
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _saveTask() {
+    if (_titleController.text.isEmpty || _startTime == null || _endTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Remplis les champs obligatoires")));
+      return;
+    }
+    widget.onSave({
+      'title': _titleController.text,
+      'description': _descController.text,
+      'startTime': _startTime,
+      'endTime': _endTime,
+      'emoji': _emoji,
+      'iconPath': _iconPath,
+      'done': false,
+    });
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Nouvelle tâche")),
+      body: Padding(
+        padding: EdgeInsets.all(16),
+        child: ListView(
+          children: [
+            TextField(controller: _titleController, decoration: InputDecoration(labelText: "Titre *")),
+            TextField(controller: _descController, decoration: InputDecoration(labelText: "Description")),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Début: ${_startTime ?? "--:--"}"),
+                TextButton(onPressed: () => _pickTime(true), child: Text("Choisir"))
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Fin: ${_endTime ?? "--:--"}"),
+                TextButton(onPressed: () => _pickTime(false), child: Text("Choisir"))
+              ],
+            ),
+            Row(
+              children: [
+                ElevatedButton(onPressed: _pickEmoji, child: Text("Emoji")),
+                SizedBox(width: 10),
+                ElevatedButton(onPressed: _pickImage, child: Text("Image"))
+              ],
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(onPressed: _saveTask, child: Text("Enregistrer"))
+          ],
+        ),
       ),
     );
   }

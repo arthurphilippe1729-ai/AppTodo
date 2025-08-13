@@ -1,5 +1,5 @@
-name: todo_planning_app
-description: Application To-Do et Planning
+name: app_todo_plus
+description: Application To-Do & Planning moderne avec titre, description, horaires, icône et splash animé
 publish_to: "none"
 version: 1.0.0+1
 
@@ -12,10 +12,22 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   path_provider: ^2.0.15
+  image_picker: ^1.0.7
+  emoji_picker_flutter: ^1.6.1
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^2.0.0
+  flutter_native_splash: ^2.3.2
 
 flutter:
   uses-material-design: true
+
+flutter_native_splash:
+  color: "#ffffff"
+  color_dark: "#121212"
+  image: assets/icon.png
+  android: true
+  ios: true
