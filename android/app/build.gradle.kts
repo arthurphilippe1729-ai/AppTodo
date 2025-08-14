@@ -19,14 +19,14 @@ android {
     // 📌 IMPORTANT : pour compatibilité avec emoji_picker & image_picker
     ndkVersion = "27.0.12077973"
 
-    compileOptions {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
-    }
+   compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+kotlinOptions {
+    jvmTarget = "17"
+}
 
     buildTypes {
         release {
