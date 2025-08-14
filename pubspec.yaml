@@ -1,5 +1,5 @@
 name: app_todo_plus
-description: Application To-Do & Planning moderne avec titre, description, horaires, icône et splash animé
+description: Application To-Do & Planning moderne (titre, description, horaires, icône, splash)
 publish_to: "none"
 version: 1.0.0+1
 
@@ -24,10 +24,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Décommente si tu as des images/icônes :
+  # assets:
+  #   - assets/icon.png
 
 flutter_native_splash:
   color: "#ffffff"
   color_dark: "#121212"
-  image: assets/icon.png
+  # image: assets/icon.png   # décommente si tu fournis une image
   android: true
   ios: true

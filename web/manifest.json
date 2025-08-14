@@ -1,6 +1,6 @@
 {
-    "name": "todo_planning_app",
-    "short_name": "todo_planning_app",
+    "name": "app_todo_plus",
+    "short_name": "app_todo_plus",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

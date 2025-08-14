@@ -1,4 +1,4 @@
-# todo_planning_app
+# app_todo_plus
 
 A new Flutter project.
 

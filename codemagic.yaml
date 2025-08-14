@@ -1,0 +1,43 @@
+workflows:
+  android_release:
+    name: Android Release APK (recreate android + fix toolchain)
+    environment:
+      flutter: stable
+      java: 17
+    scripts:
+      - name: Recreate fresh Android folder
+        script: |
+          # On repart d'un Android tout neuf pour éviter "unsupported Gradle project"
+          rm -rf android
+          flutter create .
+      - name: Bump Gradle wrapper to 8.9
+        script: |
+          sed -i.bak 's/gradle-[0-9.]\+-all.zip/gradle-8.9-all.zip/' android/gradle/wrapper/gradle-wrapper.properties
+      - name: Force Java/Kotlin 17 + NDK 27 in app/build.gradle (Groovy)
+        script: |
+          APP_GRADLE="android/app/build.gradle"
+          # Ajoute ndkVersion dans android { ... } si absent
+          if ! grep -q "ndkVersion" "$APP_GRADLE"; then
+            awk '/android \{/{print;print "    ndkVersion \x2227.0.12077973\x22";next}1' "$APP_GRADLE" > tmp && mv tmp "$APP_GRADLE"
+          fi
+          # Ajoute compileOptions/kotlinOptions (Java 17) si absents
+          if ! grep -q "compileOptions" "$APP_GRADLE"; then
+            awk '/android \{/{print;print "    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_17\n        targetCompatibility JavaVersion.VERSION_17\n    }\n    kotlinOptions {\n        jvmTarget = \x2717\x27\n    }";next}1' "$APP_GRADLE" > tmp && mv tmp "$APP_GRADLE"
+          fi
+      - name: (Optional) add Android 13+ media permission for gallery (image_picker)
+        script: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q 'READ_MEDIA_IMAGES' "$MANIFEST"; then
+            # Insère la permission juste après <manifest ...>
+            awk 'NR==1{print;print "<uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\"/>";next}1' "$MANIFEST" > tmp && mv tmp "$MANIFEST"
+          fi
+          # Permission legacy (API <= 32)
+          if ! grep -q 'READ_EXTERNAL_STORAGE' "$MANIFEST"; then
+            awk 'NR==1{print;print "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" android:maxSdkVersion=\"32\"/>";next}1' "$MANIFEST" > tmp && mv tmp "$MANIFEST"
+          fi
+      - name: Flutter pub get + build
+        script: |
+          flutter pub get
+          flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
