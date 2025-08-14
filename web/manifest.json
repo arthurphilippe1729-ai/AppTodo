@@ -1,6 +1,6 @@
 {
-    "name": "app_todo_plus",
-    "short_name": "app_todo_plus",
+    "name": "todo",
+    "short_name": "todo",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
