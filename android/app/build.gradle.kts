@@ -16,21 +16,21 @@ android {
         versionName = "1.0"
     }
 
-    // 📌 IMPORTANT : pour compatibilité avec emoji_picker & image_picker
     ndkVersion = "27.0.12077973"
 
-   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
-kotlinOptions {
-    jvmTarget = "17"
-}
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
