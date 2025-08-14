@@ -18,5 +18,3 @@ subprojects {
     }
 }
 
-
-kotlin.compiler.jvmTarget=17
