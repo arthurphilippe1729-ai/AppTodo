@@ -1,6 +1,6 @@
 # app_todo_plus
 
-A new Flutter project.
+Project of application for the needs of my girlfriend 
 
 ## Getting Started
 
