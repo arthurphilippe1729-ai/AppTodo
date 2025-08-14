@@ -1,37 +1,20 @@
+import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("dev.flutter.flutter-gradle-plugin")
+    id("com.android.application") apply false
+    id("org.jetbrains.kotlin.android") apply false
 }
 
-android {
-    namespace = "com.example.app_todo_plus"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "com.example.app_todo_plus"
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-    }
-
-    ndkVersion = "27.0.12077973"
-
-    compileOptions {
+// Applique Java 17 et Kotlin 17 à tous les sous-modules (y compris les plugins comme emoji_picker_flutter)
+subprojects {
+    tasks.withType<JavaCompile>().configureEach {
         sourceCompatibility = "17"
         targetCompatibility = "17"
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
+    tasks.withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
     }
-}
-
-flutter {
-    source = "../.."
-}
-
-kotlin {
-    jvmToolchain(17)
 }
